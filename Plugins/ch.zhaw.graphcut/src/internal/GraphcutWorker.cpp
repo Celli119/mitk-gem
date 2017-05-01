@@ -25,9 +25,7 @@ void GraphcutWorker::preparePipeline() {
 
     m_graphCut = GraphCutFilterType::New();
     m_graphCut->SetInputImage(m_input);
-    m_graphCut->SetForegroundImage(rescaleMask(m_foreground, m_ForegroundPixelValue));
-    m_graphCut->SetBackgroundImage(rescaleMask(m_background, m_ForegroundPixelValue));
-    m_graphCut->SetForegroundPixelValue(m_ForegroundPixelValue);
+    m_graphCut->SetMultiLabelImage(m_foreground);
     const uint32_t uiNumberOfThreads = std::thread::hardware_concurrency();
     m_graphCut->SetNumberOfThreads(uiNumberOfThreads > 0 ? uiNumberOfThreads : 1);
 

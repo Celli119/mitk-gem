@@ -14,7 +14,7 @@
 #include <itkImage.h>
 #include <itkCommand.h>
 
-#include "lib/GraphCut3D/GraphCut.h"
+#include "lib/GraphCut3D/MultiLabelGraphCut.h"
 #include "Worker.h"
 
 class ProgressObserverCommand : public itk::Command {
@@ -66,7 +66,7 @@ public:
     typedef itk::Image<BinaryPixelType, 3> OutputImageType;
 
     // typedef for pipeline
-    typedef GraphCut::FilterType<InputImageType, MaskImageType, MaskImageType, OutputImageType> GraphCutFilterType;
+    typedef GraphCut::FilterType<InputImageType, MaskImageType, OutputImageType> GraphCutFilterType;
 
     GraphcutWorker();
 
@@ -90,9 +90,6 @@ public:
         m_foreground = mask;
     }
 
-    void setBackgroundMask(MaskImageType::Pointer mask){
-        m_background = mask;
-    }
 
     void setSigma(double d){
         m_Sigma = d;
@@ -116,7 +113,6 @@ private:
     // member variables
     InputImageType::Pointer m_input;
     MaskImageType::Pointer m_foreground;
-    MaskImageType::Pointer m_background;
     OutputImageType::Pointer m_output;
     GraphCutFilterType::Pointer m_graphCut;
     ProgressObserverCommand::Pointer m_progressCommand;

@@ -44,12 +44,10 @@ void GraphcutView::CreateQtPartControl(QWidget *parent) {
     // init image selectors
     initializeImageSelector(m_Controls.greyscaleImageSelector);
     initializeImageSelector(m_Controls.foregroundImageSelector);
-    initializeImageSelector(m_Controls.backgroundImageSelector);
 
     // set predicates to filter which images are selectable
     m_Controls.greyscaleImageSelector->SetPredicate(WorkbenchUtils::createIsImageTypePredicate());
-    m_Controls.foregroundImageSelector->SetPredicate(WorkbenchUtils::createIsBinaryImageTypePredicate());
-    m_Controls.backgroundImageSelector->SetPredicate(WorkbenchUtils::createIsBinaryImageTypePredicate());
+    m_Controls.foregroundImageSelector->SetPredicate(WorkbenchUtils::createIsImageTypePredicate());
 
     // setup signals
     connect(m_Controls.startButton, SIGNAL(clicked()), this, SLOT(startButtonPressed()));
@@ -57,7 +55,6 @@ void GraphcutView::CreateQtPartControl(QWidget *parent) {
     connect(m_Controls.refreshMemoryButton, SIGNAL(clicked()), this, SLOT(refreshButtonPressed()));
     connect(m_Controls.greyscaleImageSelector, SIGNAL(OnSelectionChanged (const mitk::DataNode *)), this, SLOT(imageSelectionChanged()));
     connect(m_Controls.foregroundImageSelector, SIGNAL(OnSelectionChanged (const mitk::DataNode *)), this, SLOT(imageSelectionChanged()));
-    connect(m_Controls.backgroundImageSelector, SIGNAL(OnSelectionChanged (const mitk::DataNode *)), this, SLOT(imageSelectionChanged()));
 
     // init default state
     m_currentlyActiveWorkerCount = 0;
@@ -77,12 +74,10 @@ void GraphcutView::startButtonPressed() {
         // get the nodes
         mitk::DataNode *greyscaleImageNode = m_Controls.greyscaleImageSelector->GetSelectedNode();
         mitk::DataNode *foregroundMaskNode = m_Controls.foregroundImageSelector->GetSelectedNode();
-        mitk::DataNode *backgroundMaskNode = m_Controls.backgroundImageSelector->GetSelectedNode();
 
         // gather input images
         mitk::Image::Pointer greyscaleImage = dynamic_cast<mitk::Image *>(greyscaleImageNode->GetData());
         mitk::Image::Pointer foregroundMask = dynamic_cast<mitk::Image *>(foregroundMaskNode->GetData());
-        mitk::Image::Pointer backgroundMask = dynamic_cast<mitk::Image *>(backgroundMaskNode->GetData());
 
         // create worker. QThreadPool will take care of the deconstruction of the worker once it has finished
         MITK_INFO("ch.zhaw.graphcut") << "create the worker";
@@ -92,16 +87,13 @@ void GraphcutView::startButtonPressed() {
         MITK_INFO("ch.zhaw.graphcut") << "cast the images to ITK";
         GraphcutWorker::InputImageType::Pointer greyscaleImageItk;
         GraphcutWorker::MaskImageType::Pointer foregroundMaskItk;
-        GraphcutWorker::MaskImageType::Pointer backgroundMaskItk;
         mitk::CastToItkImage(greyscaleImage, greyscaleImageItk);
         mitk::CastToItkImage(foregroundMask, foregroundMaskItk);
-        mitk::CastToItkImage(backgroundMask, backgroundMaskItk);
 
         // set images in worker
         MITK_INFO("ch.zhaw.graphcut") << "init worker";
         worker->setInputImage(greyscaleImageItk);
         worker->setForegroundMask(foregroundMaskItk);
-        worker->setBackgroundMask(backgroundMaskItk);
 
         // set parameters
         worker->setSigma(m_Controls.paramSigmaSpinBox->value());
@@ -144,13 +136,12 @@ void GraphcutView::workerIsDone(itk::DataObject::Pointer data, unsigned int work
     newNode->SetData(resultImage);
 
     // set some node properties
-    newNode->SetProperty("binary", mitk::BoolProperty::New(true));
+    newNode->SetProperty("labelset.contour.active", mitk::BoolProperty::New(true));
     newNode->SetProperty("name", mitk::StringProperty::New("graphcut segmentation"));
-    newNode->SetProperty("color", mitk::ColorProperty::New(1.0,0.0,0.0));
+//    newNode->SetProperty("color", mitk::ColorProperty::New(1.0,0.0,0.0));
     newNode->SetProperty("volumerendering", mitk::BoolProperty::New(true));
     newNode->SetProperty("layer", mitk::IntProperty::New(1));
     newNode->SetProperty("opacity", mitk::FloatProperty::New(0.5));
-
     // add result to the storage
     this->GetDataStorage()->Add( newNode );
 
@@ -284,30 +275,20 @@ bool GraphcutView::isValidSelection() {
     // get the nodes selected
     mitk::DataNode *greyscaleImageNode = m_Controls.greyscaleImageSelector->GetSelectedNode();
     mitk::DataNode *foregroundMaskNode = m_Controls.foregroundImageSelector->GetSelectedNode();
-    mitk::DataNode *backgroundMaskNode = m_Controls.backgroundImageSelector->GetSelectedNode();
 
     // set the mandatory field based on whether or not the nodes are NULL
     setMandatoryField(m_Controls.greyscaleSelector, (greyscaleImageNode==NULL));
     setMandatoryField(m_Controls.foregroundSelector, (foregroundMaskNode==NULL));
-    setMandatoryField(m_Controls.backgroundSelector, (backgroundMaskNode==NULL));
 
-    if(greyscaleImageNode && foregroundMaskNode && backgroundMaskNode){
-        if(foregroundMaskNode->GetName() == backgroundMaskNode->GetName()){
-            setMandatoryField(m_Controls.foregroundSelector, true);
-            setMandatoryField(m_Controls.backgroundSelector, true);
-            QMessageBox::warning ( NULL, "Error", "foreground and background seem to be the same image.");
-            return false;
-        }
-
+    if(greyscaleImageNode && foregroundMaskNode){
         // gather input images
         mitk::Image::Pointer grey = dynamic_cast<mitk::Image *>(greyscaleImageNode->GetData());
         mitk::Image::Pointer fg = dynamic_cast<mitk::Image *>(foregroundMaskNode->GetData());
-        mitk::Image::Pointer bg = dynamic_cast<mitk::Image *>(backgroundMaskNode->GetData());
 
-        MITK_INFO << grey->GetDimension() << fg->GetDimension() << bg->GetDimension();
-        if((grey->GetDimension() == fg->GetDimension()) && (fg->GetDimension() == bg->GetDimension())){
+        MITK_INFO << grey->GetDimension() << fg->GetDimension();
+        if((grey->GetDimension() == fg->GetDimension())){
             for(int i = 0, max = grey->GetDimension(); i < max ; ++i){
-                if((grey->GetDimensions()[i] == fg->GetDimensions()[i]) && (fg->GetDimensions()[i] == bg->GetDimensions()[i])){
+                if((grey->GetDimensions()[i] == fg->GetDimensions()[i])){
                     continue;
                 } else{
                     QString msg("Image dimension mismatch in dimension ");
