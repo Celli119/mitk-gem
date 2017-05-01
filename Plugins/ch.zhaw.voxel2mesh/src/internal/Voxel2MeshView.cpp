@@ -18,7 +18,9 @@ See LICENSE.txt or http://www.mitk.org for details.
 // Blueberry
 #include <berryISelectionService.h>
 #include <berryIWorkbenchWindow.h>
-
+#include <mitkLabelSetImage.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataNormals.h>
 // Qmitk
 #include "Voxel2MeshView.h"
 
@@ -28,6 +30,8 @@ See LICENSE.txt or http://www.mitk.org for details.
 //mitk image
 #include <mitkImage.h>
 #include <mitkNodePredicateProperty.h>
+#include <mitkColorProperty.h>
+#include <vtkMitkRectangleProp.h>
 
 #include "mitkGraphcutSegmentationToSurfaceFilter.h"
 
@@ -76,13 +80,27 @@ void Voxel2MeshView::generateSurfaceButtonPressed() {
     }
 
     foreach(mitk::DataNode::Pointer node, nodes){
-        mitk::Image::Pointer img = dynamic_cast<mitk::Image *>(node->GetData());
-        mitk::Surface::Pointer surface = createSurface(img, params);
-        mitk::DataNode::Pointer surfaceNode = mitk::DataNode::New();
-        QString name("Surface");
-        surfaceNode->SetProperty("name", mitk::StringProperty::New(name.toUtf8().constData()));
-        surfaceNode->SetData(surface);
-        this->GetDataStorage()->Add( surfaceNode );
+        mitk::LabelSetImage::Pointer img = dynamic_cast<mitk::LabelSetImage *>(node->GetData());
+        for (int iLabel = 1; iLabel < img->GetNumberOfLabels(); ++iLabel) {
+            mitk::Image::Pointer imageLabel = mitk::Image::New();
+            imageLabel = img->CreateLabelMask(iLabel);
+            mitk::Color color = img->GetLabel(iLabel, img->GetActiveLayer())->GetColor();
+            mitk::Surface::Pointer surface = createSurface(imageLabel, params);
+            vtkSmartPointer<vtkPolyDataNormals> normalsGenerator = vtkSmartPointer<vtkPolyDataNormals>::New();
+            normalsGenerator->SetInputData( surface->GetVtkPolyData() );
+            normalsGenerator->FlipNormalsOff();
+            normalsGenerator->Update();
+            surface->SetVtkPolyData(normalsGenerator->GetOutput());
+            surface->Update();
+            mitk::DataNode::Pointer surfaceNode = mitk::DataNode::New();
+            auto labelName = img->GetLabel(iLabel,img->GetActiveLayer())->GetName();
+            std :: string labelNameTmp = labelName + "-Surface";
+            QString name(labelNameTmp.c_str());
+            surfaceNode->SetProperty("name", mitk::StringProperty::New(name.toUtf8().constData()));
+            surfaceNode->SetData(surface);
+            surfaceNode->SetColor(color);
+            this->GetDataStorage()->Add( surfaceNode );
+        }
     }
 
     mitk::RenderingManager::GetInstance()->RequestUpdateAll();
