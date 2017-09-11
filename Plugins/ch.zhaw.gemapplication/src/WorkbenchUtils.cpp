@@ -85,7 +85,7 @@ NodePredicateOr::Pointer WorkbenchUtils::createIsImageTypePredicate() {
 }
 
 NodePredicateAnd::Pointer WorkbenchUtils::createIsBinaryImageTypePredicate() {
-    auto isBinaryPredicate = NodePredicateProperty::New("binary", BoolProperty::New(true));
+    auto isBinaryPredicate = NodePredicateProperty::New("labelset.contour.active", BoolProperty::New(true));
     return NodePredicateAnd::New(createIsImageTypePredicate(), isBinaryPredicate);
 }
 

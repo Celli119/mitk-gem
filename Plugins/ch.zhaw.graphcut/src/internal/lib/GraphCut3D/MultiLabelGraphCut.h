@@ -1,12 +1,12 @@
-#ifndef __GraphCut_h__
-#define __GraphCut_h__
+#ifndef __MultiLabelGraphCut_h__
+#define __MultiLabelGraphCut_h__
 
 #include "lib/gridcut/config.h"
 #ifdef GRIDCUT_LIBRARY_AVAILABLE
 #include "ImageMultiLabelGridCutFilter.h"
 #endif
 
-namespace GraphCut
+namespace MultiLabelGraphCut
 {
     template<typename TInput, typename TMultiLabel, typename TOutput>
     #ifdef GRIDCUT_LIBRARY_AVAILABLE
@@ -14,4 +14,4 @@ namespace GraphCut
     #endif // GRIDCUT_LIBRARY_AVAILABLE
 }
 
-#endif //__GraphCut_h__
+#endif //__MultiLabelGraphCut__

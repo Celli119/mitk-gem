@@ -14,6 +14,7 @@
 #include <berryISelectionListener.h>
 #include <QmitkAbstractView.h>
 #include "ui_GraphcutViewControls.h"
+#include <mitkLabelSetImageConverter.h>
 
 // Utils
 #include "WorkbenchUtils.h"
@@ -26,12 +27,17 @@ public:
     static const std::string VIEW_ID;
 
 protected slots:
-    void startButtonPressed();
-    void refreshButtonPressed();
-    void imageSelectionChanged();
+    void startButtonPressedMulti();
+    void startButtonPressedBin();
+    void refreshButtonPressedMulti();
+    void refreshButtonPressedBin();
+    void imageSelectionChangedMulti();
+    void imageSelectionChangedBin();
+
     void workerHasStarted(unsigned int);
-    void workerProgressUpdate(float progress, unsigned int id);
     void workerIsDone(itk::DataObject::Pointer, unsigned int);
+    void workerProgressUpdateMulti(float progress, unsigned int);
+    void workerProgressUpdateBin(float progress, unsigned int);
 
 protected:
     virtual void CreateQtPartControl(QWidget *parent);
@@ -44,16 +50,22 @@ protected:
     Ui::GraphcutViewControls m_Controls;
 
 private:
-    void updateMemoryRequirements(double memoryRequiredInBytes);
-    void updateTimeEstimate(long long numberOfEdges);
+    void updateMemoryRequirementsBin(double memoryRequiredInBytes);
+    void updateMemoryRequirementsMulti(double memoryRequiredInBytes);
+    void updateTimeEstimateMulti(long long int numberOfEdges);
+    void updateTimeEstimateBin(long long int numberOfEdges);
     void initializeImageSelector(QmitkDataStorageComboBox *);
     void setMandatoryField(QWidget *, bool);
     void setWarningField(QWidget *, bool);
     void setErrorField(QWidget *, bool);
     void setQStyleSheetField(QWidget *, const char *, bool);
-    bool isValidSelection();
+    bool isValidSelectionMulti();
+    bool isValidSelectionBin();
     void lockGui(bool);
+
     unsigned int m_currentlyActiveWorkerCount;
+
+
 };
 
 #endif // GraphcutView_h

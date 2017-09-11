@@ -13,9 +13,15 @@
 // ITK
 #include <itkImage.h>
 #include <itkCommand.h>
+#include <itkBinaryThresholdImageFilter.h>
 
-#include "lib/GraphCut3D/MultiLabelGraphCut.h"
+#include <thread>
+
 #include "Worker.h"
+#include "WorkbenchUtils.h"
+
+#include <internal/lib/GraphCut3D/GraphCut.h>
+#include <internal/lib/GraphCut3D/MultiLabelGraphCut.h>
 
 class ProgressObserverCommand : public itk::Command {
 public:
@@ -65,13 +71,10 @@ public:
     typedef itk::Image<BinaryPixelType, 3> MaskImageType;
     typedef itk::Image<BinaryPixelType, 3> OutputImageType;
 
-    // typedef for pipeline
-    typedef GraphCut::FilterType<InputImageType, MaskImageType, OutputImageType> GraphCutFilterType;
-
     GraphcutWorker();
 
     // inherited slots
-    void process();
+    virtual void process() = 0;
 
     // inherited signals
     void started(unsigned int workerId);
@@ -105,22 +108,22 @@ public:
 
     unsigned int id;
 
-private:
+protected:
 
-    void preparePipeline();
-    MaskImageType::Pointer rescaleMask(MaskImageType::Pointer, MaskImageType::ValueType);
+    virtual void preparePipeline()= 0;
 
-    // member variables
-    InputImageType::Pointer m_input;
-    MaskImageType::Pointer m_foreground;
+    BinaryPixelType m_ForegroundPixelValue;
+
     OutputImageType::Pointer m_output;
-    GraphCutFilterType::Pointer m_graphCut;
+    BoundaryDirection m_boundaryDirection;
+// member variables
+    InputImageType::Pointer m_input;
+// parameters
+    double m_Sigma;
+    MaskImageType::Pointer m_foreground;
     ProgressObserverCommand::Pointer m_progressCommand;
 
-    // parameters
-    double m_Sigma;
-    BoundaryDirection m_boundaryDirection;
-    BinaryPixelType m_ForegroundPixelValue;
+    MaskImageType::Pointer rescaleMask(MaskImageType::Pointer, MaskImageType::ValueType);
 };
 
 #endif // __GraphcutWorker_h__

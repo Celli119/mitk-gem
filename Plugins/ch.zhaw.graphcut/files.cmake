@@ -8,6 +8,8 @@ set(INTERNAL_CPP_FILES
   lib/GraphCut3D/lib/kolmogorov-3.03/maxflow.cpp
   GraphcutView.cpp
   GraphcutWorker.cpp
+  GraphcutWorkerMulti.cpp
+  GraphcutWorkerBin.cpp
 )
 
 set(UI_FILES
